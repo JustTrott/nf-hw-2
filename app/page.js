@@ -1,17 +1,32 @@
 'use client'
-import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const task = {id: 1, text: "Todo Test", completed: false}
+import TaskList from './components/TaskList';
 
 export default function Home() {
-  const [tasks, setTasks] = useState([]); // Use state to manage tasks
-  const [filter, setFilter] = useState('all'); // Use state to manage filter
-  const [newTaskText, setNewTaskText] = useState(''); // State for input field
+  const [tasks, setTasks] = useState([]);
+  const [filter, setFilter] = useState('all');
+  const [newTaskText, setNewTaskText] = useState('');
+  
+  let didInit = false;
+  
+  // Load tasks from localStorage on component mount
+  useEffect(() => {
+    if (didInit) return;
+    didInit = true;
+    const storedTasks = localStorage.getItem('tasks');
+    if (storedTasks !== undefined) {
+      setTasks(JSON.parse(storedTasks));
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
+  
+  // Save tasks to localStorage whenever tasks change
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
 
   const handleAddTask = () => {
     if (newTaskText.trim() !== '') {
-      console.log('Add task:', newTaskText)
       setTasks([...tasks, { id: Date.now(), text: newTaskText, completed: false }]);
       setNewTaskText(''); // Clear the input field
     }
@@ -30,16 +45,6 @@ export default function Home() {
   const handleClearCompleted = () => {
     setTasks(tasks.filter(task => !task.completed));
   }
-
-  const filteredTasks = tasks.filter(task => {
-    if (filter === 'active') {
-      return !task.completed;
-    } else if (filter === 'completed') {
-      return task.completed;
-    } else {
-      return true;
-    }
-  });
 
   return (
     <div className="container mx-auto p-4">
@@ -65,31 +70,7 @@ export default function Home() {
       <div className="bg-gray-800 rounded p-4">
         {/* Medium level: extract todo's listing to TaskList component */}
         {/* Basic level: map through tasks state by using this code: */}
-        <ul>
-          {filteredTasks.map(task => (
-          <li className="flex justify-between items-center p-2 bg-gray-900 rounded mb-2" key={task.id}>
-            <div className="flex items-center">
-              <button 
-              className="w-6 h-6 my-auto mr-6"
-              onClick={() => handleToggleTask(task.id)} 
-              >
-                <Image
-                      src={task.completed ? "/images/circle-cheked.svg" : "/images/circle.svg"}
-                      alt="Task status"
-                      width={30}
-                      height={30}
-                />
-              </button>
-              <span className={`ml-2 ${task.completed ? 'line-through text-gray-500' : 'text-white'}`}>{task.text}</span>
-            </div>
-            <button onClick={() => handleDeleteTask(task.id)} className="text-gray-400 hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </li>
-          ))}
-        </ul>
+        <TaskList tasks={tasks} onToggleTask={handleToggleTask} onDeleteTask={handleDeleteTask} filter={filter} />
         <div className="mt-4 flex justify-between items-center text-sm text-gray-400">
           <span> 
             {tasks.filter(task => !task.completed).length} items left</span>  {/* show how many uncompleted items left */}
@@ -107,5 +88,6 @@ export default function Home() {
         </div>
       </div>
     </div>
+    // <> </>
   );
 }
