@@ -15,7 +15,7 @@ export default function Home() {
     if (didInit) return;
     didInit = true;
     const storedTasks = localStorage.getItem('tasks');
-    if (storedTasks !== undefined) {
+    if (storedTasks !== null) {
       setTasks(JSON.parse(storedTasks));
     }
   }, []); // Empty dependency array ensures this runs only once on mount
